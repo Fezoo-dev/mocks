@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using FakeItEasy;
+using FluentAssertions;
 using NUnit.Framework;
 
 namespace MockFramework
@@ -43,11 +46,76 @@ namespace MockFramework
         [SetUp]
         public void SetUp()
         {
-            //thingService = A...
+            thingService = A.Fake<IThingService>();
             thingCache = new ThingCache(thingService);
         }
 
-        //TODO: написать простейший тест, а затем все остальные
-        //Live Template tt работает!
+        [Test]
+        public void Get_NoneExistingObject_ReturnsNull()
+        {
+            thingCache.Get(thingId1)
+                .Should().BeNull();
+
+            A.CallTo(() => thingService.TryRead(thingId1, out thing1))
+                .MustHaveHappened();
+        }
+
+        [Test]
+        public void Get_ReturnsObject_WhenObjectNotInCache()
+        {
+            A.CallTo(() => thingService.TryRead(thingId1, out thing1))
+                .Returns(true);
+
+            thingCache.Get(thingId1)
+                .Should().Be(thing1);
+        }
+
+        [Test]
+        public void Get_ReturnsCachedObject_WhenObjectInCache()
+        {
+            A.CallTo(() => thingService.TryRead(thingId1, out thing1))
+                .Returns(true);
+
+            thingCache.Get(thingId1);
+            thingCache.Get(thingId1)
+                .Should()
+                .Be(thing1);
+
+            A.CallTo(() => thingService.TryRead(thingId1, out thing1))
+                .MustHaveHappened(Repeated.Exactly.Once);
+        }
+
+        [Test]
+        public void Get_CacheEachNewObject()
+        {
+            A.CallTo(() => thingService.TryRead(thingId1, out thing1))
+                .Returns(true);
+            A.CallTo(() => thingService.TryRead(thingId2, out thing2))
+                .Returns(true);
+
+            thingCache.Get(thingId1);
+            thingCache.Get(thingId2);
+
+            Thing result;
+            A.CallTo(() => thingService.TryRead(A<string>.Ignored, out result))
+                .MustHaveHappened(Repeated.Exactly.Twice);
+        }
+
+        [Test]
+        public void Get_ReturnNullTwice_WhenRequestingNonExistingObjectTwice()
+        {
+            thingCache.Get(String.Empty);
+            thingCache.Get(String.Empty);
+
+            Thing tmp;
+            A.CallTo(() => thingService.TryRead(A<string>.Ignored, out tmp))
+                .MustHaveHappened(Repeated.Exactly.Twice);
+        }
+
+        [Test]
+        public void Get_ThrowArgumentNullException_WhenThingIdIsNull()
+        {
+            Assert.Throws<ArgumentNullException>(() => thingCache.Get(null));
+        }
     }
 }
