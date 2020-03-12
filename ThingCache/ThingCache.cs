@@ -96,8 +96,8 @@ namespace MockFramework
             thingCache.Get(thingId1);
             thingCache.Get(thingId2);
 
-            Thing result;
-            A.CallTo(() => thingService.TryRead(A<string>.Ignored, out result))
+            A.CallTo(() => thingService.TryRead(A<string>.Ignored, out thing1))
+                .WithAnyArguments()
                 .MustHaveHappened(Repeated.Exactly.Twice);
         }
 
@@ -107,8 +107,8 @@ namespace MockFramework
             thingCache.Get(String.Empty);
             thingCache.Get(String.Empty);
 
-            Thing tmp;
-            A.CallTo(() => thingService.TryRead(A<string>.Ignored, out tmp))
+            A.CallTo(() => thingService.TryRead(A<string>.Ignored, out thing1))
+                .WithAnyArguments()
                 .MustHaveHappened(Repeated.Exactly.Twice);
         }
 
